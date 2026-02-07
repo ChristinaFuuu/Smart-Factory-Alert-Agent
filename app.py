@@ -122,8 +122,12 @@ def main():
         df2['alert_level'] = df2['abnormal_prob'].apply(lambda p: 'CRITICAL' if p >= 0.8 else ('WARNING' if p >= 0.6 else 'NORMAL'))
 
         st.subheader('Detected Anomalies (>= 0.6)')
-        anomalies = df2[df2['abnormal_prob'] >= 0.6].sort_values('abnormal_prob', ascending=False)
-        st.dataframe(anomalies[['timestamp', 'temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']])
+        # sort by timestamp (most recent first) and hide index
+        anomalies = df2[df2['abnormal_prob'] >= 0.6].copy()
+        if 'timestamp' in anomalies.columns:
+            anomalies['timestamp'] = pd.to_datetime(anomalies['timestamp'])
+            anomalies = anomalies.sort_values('timestamp', ascending=False)
+        st.dataframe(anomalies[['timestamp', 'temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']].style.hide_index())
 
         st.subheader('AI Agent Suggestions')
         logs = []
@@ -132,8 +136,15 @@ def main():
 
         if logs:
             df_logs = pd.DataFrame(logs)
-            st.dataframe(df_logs[['timestamp', 'level', 'prob', 'reason', 'action']])
-            csv = df_logs[['timestamp', 'level', 'prob', 'reason', 'action']].to_csv(index=False)
+            # drop repetitive 'action' column if present
+            if 'action' in df_logs.columns:
+                df_logs = df_logs.drop(columns=['action'])
+            # ensure timestamp is datetime and sort
+            if 'timestamp' in df_logs.columns:
+                df_logs['timestamp'] = pd.to_datetime(df_logs['timestamp'])
+                df_logs = df_logs.sort_values('timestamp', ascending=False)
+            st.dataframe(df_logs[['timestamp', 'level', 'prob', 'reason']].style.hide_index())
+            csv = df_logs[['timestamp', 'level', 'prob', 'reason']].to_csv(index=False)
             st.download_button('Download agent suggestions', csv, file_name='agent_suggestions.csv', mime='text/csv')
         else:
             st.info('No anomalies detected at threshold >= 0.6')
