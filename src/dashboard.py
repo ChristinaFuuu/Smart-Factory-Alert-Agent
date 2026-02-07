@@ -117,13 +117,16 @@ def render_dashboard(df, X, y):
         st.info('No timestamp available — cannot draw time series')
 
     st.markdown('### Recent anomalies (>= 0.6)')
-    anomalies = df_filtered[df_filtered['abnormal_prob'] >= 0.6].sort_values('timestamp', ascending=False)
+    anomalies = df_filtered[df_filtered['abnormal_prob'] >= 0.6].copy()
     if not anomalies.empty:
+        if 'timestamp' in anomalies.columns:
+            anomalies['timestamp'] = pd.to_datetime(anomalies['timestamp'])
+            anomalies = anomalies.sort_values('timestamp', ascending=True)
         cols = []
         if 'timestamp' in anomalies.columns:
             cols.append('timestamp')
         cols += ['temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']
-        df_anom_display = anomalies[cols].sort_values('timestamp', ascending=False).reset_index(drop=True)
+        df_anom_display = anomalies[cols].reset_index(drop=True)
         st.dataframe(df_anom_display)
         for _, r in anomalies.iterrows():
             label = f"{r['alert_level']} ({r['abnormal_prob']:.2f})"

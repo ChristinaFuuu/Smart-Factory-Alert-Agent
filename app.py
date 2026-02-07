@@ -58,6 +58,12 @@ def main():
     else:
         df_view = df
 
+    # ensure Data Viewer sorted by timestamp (oldest -> newest) and hide index
+    if 'timestamp' in df_view.columns:
+        df_view = df_view.copy()
+        df_view['timestamp'] = pd.to_datetime(df_view['timestamp'])
+        df_view = df_view.sort_values('timestamp', ascending=True).reset_index(drop=True)
+
     st.header('Data Viewer')
     st.dataframe(df_view)
 
@@ -122,8 +128,12 @@ def main():
         df2['alert_level'] = df2['abnormal_prob'].apply(lambda p: 'CRITICAL' if p >= 0.8 else ('WARNING' if p >= 0.6 else 'NORMAL'))
 
         st.subheader('Detected Anomalies (>= 0.6)')
-        anomalies = df2[df2['abnormal_prob'] >= 0.6].sort_values('timestamp', ascending=False)
-        df_anom_display = anomalies[['timestamp', 'temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']].sort_values('timestamp', ascending=False).reset_index(drop=True)
+        # sort by timestamp oldest -> newest and hide index
+        anomalies = df2[df2['abnormal_prob'] >= 0.6].copy()
+        if 'timestamp' in anomalies.columns:
+            anomalies['timestamp'] = pd.to_datetime(anomalies['timestamp'])
+            anomalies = anomalies.sort_values('timestamp', ascending=True)
+        df_anom_display = anomalies[['timestamp', 'temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']].reset_index(drop=True)
         st.dataframe(df_anom_display)
 
         st.subheader('AI Agent Suggestions')
@@ -137,7 +147,8 @@ def main():
             if 'action' in df_logs.columns:
                 df_logs = df_logs.drop(columns=['action'])
             if 'timestamp' in df_logs.columns:
-                df_logs = df_logs.sort_values('timestamp', ascending=False).reset_index(drop=True)
+                df_logs['timestamp'] = pd.to_datetime(df_logs['timestamp'])
+                df_logs = df_logs.sort_values('timestamp', ascending=True).reset_index(drop=True)
             cols_to_show = [c for c in ['timestamp', 'level', 'prob', 'reason'] if c in df_logs.columns]
             st.dataframe(df_logs[cols_to_show].reset_index(drop=True))
             csv = df_logs[cols_to_show].to_csv(index=False)
