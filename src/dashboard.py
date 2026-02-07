@@ -117,23 +117,17 @@ def render_dashboard(df, X, y):
         st.info('No timestamp available — cannot draw time series')
 
     st.markdown('### Recent anomalies (>= 0.6)')
-    anomalies = df_filtered[df_filtered['abnormal_prob'] >= 0.6].copy()
+    anomalies = df_filtered[df_filtered['abnormal_prob'] >= 0.6].sort_values('timestamp', ascending=False)
     if not anomalies.empty:
-        if 'timestamp' in anomalies.columns:
-            anomalies['timestamp'] = pd.to_datetime(anomalies['timestamp'])
-            anomalies = anomalies.sort_values('timestamp', ascending=False)
         cols = []
         if 'timestamp' in anomalies.columns:
             cols.append('timestamp')
         cols += ['temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']
-        st.dataframe(anomalies[cols].style.hide_index())
+        df_anom_display = anomalies[cols].sort_values('timestamp', ascending=False).reset_index(drop=True)
+        st.dataframe(df_anom_display)
         for _, r in anomalies.iterrows():
             label = f"{r['alert_level']} ({r['abnormal_prob']:.2f})"
             with st.expander(f"{r.get('timestamp', '')}: {label}"):
-                alert = generate_alert(r.get('timestamp', ''), float(r['abnormal_prob']), r)
-                # remove action field from displayed alert if present
-                if isinstance(alert, dict) and 'action' in alert:
-                    alert = {k: v for k, v in alert.items() if k != 'action'}
-                st.write(alert)
+                st.write(generate_alert(r.get('timestamp', ''), float(r['abnormal_prob']), r))
     else:
         st.info('No anomalies in selected range')
