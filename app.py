@@ -6,6 +6,7 @@ from src.preprocess import load_and_preprocess
 from src.agent import generate_alert
 from src.evaluate import compute_metrics
 from src.utils import get_probabilities
+from src.dashboard import render_dashboard
 
 
 @st.cache_data
@@ -39,6 +40,13 @@ def main():
     selected_data = st.sidebar.selectbox('Select dataset', data_files, index=0)
 
     df, X, y = load_data(path=selected_data)
+
+    # Dashboard (top-level summary + charts)
+    try:
+        render_dashboard(df, X, y)
+    except Exception:
+        # non-fatal: continue to existing UI if dashboard fails
+        pass
 
     st.sidebar.header('Controls')
     metrics_source = st.sidebar.selectbox('Metrics source', ['holdout (per split)', 'cross-val (CV)'], index=0)
