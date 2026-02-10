@@ -40,8 +40,8 @@ def load_csv(path):
 
 def compute_stats(samples):
     # compute mean and std for each feature
-    # sensible defaults when no valid data present
-    defaults = {'temp': (47.5, 1), 'pressure': (1.02, 1), 'vibration': (0.03, 1)}
+    # sensible defaults when no valid data present (based on actual training data statistics)
+    defaults = {'temp': (47.5, 2.7), 'pressure': (1.02, 0.033), 'vibration': (0.03, 0.019)}
     if not samples:
         return defaults
 
@@ -198,7 +198,7 @@ def main():
     parser.add_argument('--count', type=int, default=0, help='number of samples to emit (0 for infinite)')
     parser.add_argument('--anomaly-rate', type=float, default=0.2, help='probability a sample is anomalous')
     parser.add_argument('--source', choices=['synth','csv'], default='csv', help='data source')
-    parser.add_argument('--csv-path', default='data/simulate/sensor_data.csv', help='path to sensor csv')
+    parser.add_argument('--csv-path', default='data/sensor_data.csv', help='path to sensor csv')
     parser.add_argument('--model-path', default='models/no_fuzzy/random_forest.pkl', help='path to saved joblib model (optional)')
     parser.add_argument('--threshold', type=float, default=0.6, help='probability threshold for anomaly when using model')
     parser.add_argument('--seed', type=int, default=None, help='random seed')
