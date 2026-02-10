@@ -1,70 +1,96 @@
 # Smart Factory Alert Agent
 
-本專案示範一個端到端的智慧工廠設備異常偵測與告警系統，包含資料生成、前處理、監督式模型訓練、規則式 AI 代理，以及使用 Streamlit 的視覺化介面。
+智慧工廠設備異常偵測與告警系統
 
-專案結構
+## 專案簡介
+
+使用機器學習模型偵測工廠感測器異常，提供即時告警。包含資料生成、模型訓練、評估與互動式儀表板。
+
+## 專案結構
 
 ```
-smart_factory_alert_agent/
+Smart-Factory-Alert-Agent/
+├── app.py                   # Streamlit 儀表板
+├── config.yaml              # 系統配置檔
+├── requirements.txt         # Python 套件依賴
 │
 ├── data/
-│   └── generate_data.py
-│   └── sensor_data.csv (由 generate_data.py 產生)
+│   └── generate_data.py     # 產生合成感測器資料
 │
-├── src/
-│   ├── preprocess.py
-│   ├── train_model.py
-│   ├── agent.py
-│   └── evaluate.py
+├── src/                     # 核心程式模組
+│   ├── preprocess.py        # 資料前處理
+│   ├── train_model.py       # 模型訓練
+│   ├── evaluate.py          # 模型評估
+│   ├── agent.py             # 告警代理
+│   ├── dashboard.py         # Dashboard UI
+│   ├── utils.py
+│   └── noise.py
 │
-├── app.py                # Streamlit web app
-├── requirements.txt
-└── README.md
+└── scripts/
+    └── cli_simulator.py     # CLI 模擬器
 ```
 
-快速開始
+## 快速開始
 
-1. 建議建立虛擬環境並安裝套件：
+### 1. 環境設置
 
 ```bash
+# 建立虛擬環境
 python -m venv .venv
+
+# 啟動虛擬環境 (Windows)
 .venv\Scripts\activate
+
+# 安裝依賴
 pip install -r requirements.txt
 ```
 
-2. 產生測試資料：
+### 2. 產生資料
 
 ```bash
-python data/generate_data.py
+# 產生合成感測器資料
+python data/generate_data.py --modes fuzzy no_fuzzy -n 300
 ```
 
-3. 訓練模型並產生評估報告：
+### 3. 訓練模型
 
 ```bash
+# 訓練所有模型
 python -m src.train_model
 ```
 
-4. 啟動 Streamlit 應用：
+### 4. 啟動儀表板
 
 ```bash
+# 啟動 Streamlit 網頁介面
 streamlit run app.py
 ```
 
-AI 代理邏輯
+瀏覽器訪問：http://localhost:8501
 
-代理使用模型輸出（異常機率）並套用下列簡單規則：
+### 5. 使用 CLI 模擬器
 
+```bash
+# 執行命令列模擬器
+python scripts/cli_simulator.py
 ```
-if prob >= 0.8: CRITICAL -> Stop machine immediately and notify engineer
-elif prob >= 0.6: WARNING -> Schedule maintenance inspection
-else: NORMAL -> No action required
-```
 
-工具加速說明
+## 主要功能
 
-- 使用 ChatGPT / GPT-5-mini 與 GitHub Copilot 協助系統設計與範例程式碼生成。
-- Scikit-learn 用於模型訓練與評估；Streamlit 用於快速建立互動式儀表板。
+- **資料生成**：使用三層信號合成技術產生逼真的感測器時間序列資料
+- **異常偵測**：訓練 Logistic Regression、Random Forest、Gradient Boosting 三種模型
+- **評估指標**：Accuracy、Precision、Recall、F1、AUC、MSE
+- **告警分級**：NORMAL（正常）/ WARNING（警告）/ CRITICAL（危急）
+- **互動儀表板**：即時監控與告警建議
 
-下一步與截圖
+## 技術棧
 
-- 在啟動 Streamlit 後，可擷取「Data Viewer」、「Anomaly Detection」、「Agent Logs」與「Metrics」畫面的截圖作為 Demo。
+- **Python 3.10+**
+- **scikit-learn** - 機器學習框架
+- **pandas / numpy** - 資料處理
+- **Streamlit** - Web 儀表板
+- **matplotlib / seaborn** - 視覺化
+
+## 授權
+
+MIT License

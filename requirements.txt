@@ -1,9 +1,23 @@
-pandas
-numpy
-scikit-learn
-joblib
-streamlit
-matplotlib
-seaborn
-scikit-image
+# Core ML and Data Processing
+pandas==2.3.3
+numpy==2.4.2
+scikit-learn==1.8.0
+joblib==1.5.3
 
+# Visualization
+matplotlib==3.10.8
+seaborn==0.13.2
+scikit-image==0.26.0
+
+# Web Framework
+streamlit==1.54.0
+
+# Configuration Management
+pyyaml>=6.0
+
+# Development (optional, uncomment if needed)
+# pytest>=8.0.0
+# pytest-cov>=4.1.0
+# black>=24.0.0
+# flake8>=7.0.0
+# mypy>=1.8.0

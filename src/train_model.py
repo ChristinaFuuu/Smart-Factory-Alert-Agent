@@ -1,4 +1,5 @@
 import os
+import argparse
 from pathlib import Path
 import joblib
 from sklearn.pipeline import Pipeline
@@ -16,11 +17,11 @@ from src.utils import get_probabilities
 from src.noise import add_noise
 
 
-def train_and_select(save_model_dir='models', out_dir='outputs', seed=42, noise_level=0.0, noise_seed=None, perturbed_cols=None):
+def train_and_select(save_model_dir='models', out_dir='outputs', seed=42, noise_level=0.0, noise_seed=None, perturbed_cols=None, data_path='data/sensor_data.csv'):
     Path(save_model_dir).mkdir(parents=True, exist_ok=True)
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    df, X, y = load_and_preprocess()
+    df, X, y = load_and_preprocess(path=data_path)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=seed, stratify=y
@@ -55,6 +56,7 @@ def train_and_select(save_model_dir='models', out_dir='outputs', seed=42, noise_
         metrics = compute_metrics(y_test, preds, probs)
 
         # Save model
+        Path(save_model_dir).mkdir(parents=True, exist_ok=True)
         model_path = Path(save_model_dir) / f'{name}.pkl'
         joblib.dump(pipe, model_path)
 
@@ -88,6 +90,36 @@ def train_and_select(save_model_dir='models', out_dir='outputs', seed=42, noise_
     return Path(out_dir) / 'per_model_metrics.csv'
 
 
+def _run_for_mode(mode, data_path=None, **kwargs):
+    # mode: 'fuzzy' or 'no_fuzzy' or 'custom'
+    out_dir = Path('outputs') / mode
+    save_model_dir = Path('models') / mode
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_model_dir.mkdir(parents=True, exist_ok=True)
+
+    # default data path mapping (can be overridden by data_path)
+    if data_path is None:
+        if mode == 'fuzzy':
+            data_path = 'data/sensor_data_fuzzy.csv'
+        else:
+            data_path = 'data/sensor_data.csv'
+
+    return train_and_select(save_model_dir=str(save_model_dir), out_dir=str(out_dir), data_path=data_path, **kwargs)
+
+
 if __name__ == '__main__':
-    model_path = train_and_select()
-    print('Model saved to', model_path)
+    parser = argparse.ArgumentParser(description='Train models and save evaluation outputs')
+    parser.add_argument('--mode', choices=['fuzzy', 'no_fuzzy', 'both'], default='both', help='Which outputs folder to write')
+    parser.add_argument('--data_path', type=str, default=None, help='Optional path to training CSV to override defaults')
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--noise_level', type=float, default=0.0)
+    parser.add_argument('--noise_seed', type=int, default=None)
+    args = parser.parse_args()
+
+    if args.mode == 'both':
+        p1 = _run_for_mode('no_fuzzy', data_path=args.data_path, seed=args.seed, noise_level=args.noise_level, noise_seed=args.noise_seed)
+        p2 = _run_for_mode('fuzzy', data_path=args.data_path, seed=args.seed, noise_level=args.noise_level, noise_seed=args.noise_seed)
+        print('Models/evaluations saved to', p1, 'and', p2)
+    else:
+        p = _run_for_mode(args.mode, data_path=args.data_path, seed=args.seed, noise_level=args.noise_level, noise_seed=args.noise_seed)
+        print('Models/evaluations saved to', p)

@@ -1,0 +1,127 @@
+# Smart Factory Alert Agent Configuration
+
+# Data Generation
+data_generation:
+  modes:
+    - no_fuzzy
+    - fuzzy
+  num_samples: 300
+  fuzzy_abnormal_ratio: 0.2  # 20% of anomalies in fuzzy zones
+  random_seed: 42
+  
+  # Sensor thresholds
+  thresholds:
+    temperature:
+      normal_min: 45.0
+      normal_max: 50.0
+      fuzzy_low: 43.0
+      fuzzy_high: 52.0
+    pressure:
+      normal_min: 1.00
+      normal_max: 1.05
+      fuzzy_low: 0.97
+      fuzzy_high: 1.08
+    vibration:
+      normal_max: 0.07
+  
+  # Signal synthesis parameters
+  signal_synthesis:
+    temp:
+      mean: 47.5
+      std: 1.2
+      rho: 0.95  # AR(1) autocorrelation
+      ema_alpha: 0.2
+    pressure:
+      mean: 1.025
+      std: 0.025
+      rho: 0.97
+      ema_alpha: 0.2
+    vibration:
+      mean: 0.045
+      std: 0.012
+      rho: 0.80
+      ema_alpha: 0.2
+
+# Model Training
+training:
+  test_size: 0.2
+  random_seed: 42
+  stratify: true
+  
+  models:
+    logistic_regression:
+      max_iter: 1000
+    random_forest:
+      n_estimators: 100
+      max_depth: 6
+      random_state: 42
+    gradient_boosting:
+      max_depth: 3
+      random_state: 42
+  
+  # Preprocessing
+  preprocessing:
+    imputation_strategy: median
+    scaling: standard
+
+# Paths
+paths:
+  data_dir: data
+  models_dir: models
+  outputs_dir: outputs
+  
+  # Data files
+  sensor_data:
+    no_fuzzy: data/sensor_data.csv
+    fuzzy: data/sensor_data_fuzzy.csv
+    binary: data/sensor_data_binary.csv
+  
+  # Output subdirectories
+  outputs:
+    cli_logs: outputs/cli_logs
+    fuzzy: outputs/fuzzy
+    no_fuzzy: outputs/no_fuzzy
+
+# Agent Configuration
+agent:
+  alert_thresholds:
+    critical: 0.8   # abnormal_prob >= 0.8
+    warning: 0.6    # abnormal_prob >= 0.6
+  
+  actions:
+    critical: "Stop machine immediately and notify engineer"
+    warning: "Schedule maintenance inspection"
+    normal: "No action required"
+
+# Inference
+inference:
+  batch_size: 32
+  output_format: csv
+
+# Evaluation
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - auc
+    - mse
+  
+  plots:
+    confusion_matrix: true
+    roc_curve: true
+    dpi: 100
+    figsize: [8, 6]
+
+# Logging
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# Dashboard (Streamlit)
+dashboard:
+  title: "Smart Factory Anomaly Alert Agent"
+  layout: wide
+  cache_ttl: 3600  # seconds

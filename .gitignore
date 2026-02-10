@@ -1,28 +1,104 @@
-# Ignore Python cache, virtualenvs and common temporary files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
 
 # Virtual environments
 .venv/
 env/
 venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# Testing / coverage
+# Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
 
 # IDEs and editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
+
+# Project specific - Generated outputs
+models/*.pkl
+models/fuzzy/
+models/no_fuzzy/
+outputs/*.png
+outputs/*.csv
+outputs/*.txt
+outputs/cli_logs/
+outputs/fuzzy/
+outputs/no_fuzzy/
+outputs/batch_*/
+data/sensor_data*.csv
+data/generated_sim.csv
+data/simulate/
+
+# Temporary files
+*.log
+*.tmp
+*copy.py
+*.bak
+
+# ML artifacts
+mlruns/
+.mlflow/
+wandb/
+
+# Environment variables
+.env
+.env.local
+
+# 不需要上傳的文件檔案
+report2.md
+INFERENCE.md
+CHANGELOG.md
+LICENSE
+Makefile
+setup.py
+README.md.backup
+資料產生方式報告講稿.md
+資料產生方式簡報講稿.md
+image-1.png
+
+# 不需要上傳的腳本 (保留 cli_simulator.py)
+scripts/agent_run.py
+scripts/batch_inference.py
+scripts/check_predictions.py
+scripts/cv_check.py
+scripts/eval_datasets.py
+scripts/noise_experiments.py
+scripts/run_pipeline_compare.py
+
+# examples 資料夾
+examples/

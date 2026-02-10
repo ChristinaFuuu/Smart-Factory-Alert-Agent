@@ -20,7 +20,7 @@ def compute_fallback_score(df):
     return score.clip(0, 1)
 
 
-def render_dashboard(df, X, y):
+def render_dashboard(df, X, y, selected_model_path=None):
     st.subheader('Dashboard')
 
     df2 = df.copy()
@@ -30,15 +30,11 @@ def render_dashboard(df, X, y):
     else:
         st.warning("No 'timestamp' column found — time charts disabled")
 
-    model_files = list(Path('models').glob('*.pkl'))
-    use_model = st.checkbox('Use trained model for scoring', value=bool(model_files))
-
-    if use_model and model_files:
-        names = [p.name for p in model_files]
-        sel_name = st.selectbox('Select model', names, index=0)
-        model_path = str(next(p for p in model_files if p.name == sel_name))
+    # Use model selected from sidebar (passed-in `selected_model_path`),
+    # otherwise use heuristic fallback scoring.
+    if selected_model_path:
         try:
-            model = load_model_cached(model_path)
+            model = load_model_cached(selected_model_path)
             probs = get_probabilities(model, X)
             if probs is None:
                 df2['abnormal_prob'] = compute_fallback_score(df2)
@@ -90,29 +86,64 @@ def render_dashboard(df, X, y):
         if len(df_plot) > 2000:
             df_plot = df_plot.set_index('timestamp').resample('1H').mean().reset_index()
 
-        col1, col2, col3 = st.columns(3)
+        def chart_for(feature):
+            st.markdown(f'**{feature}**')
+            if feature not in df_plot.columns:
+                st.info(f'No `{feature}` data')
+                return
+            # determine y-domain (min/max) for this feature
+            try:
+                vals = pd.to_numeric(df_plot[feature], errors='coerce').dropna()
+                min_v = float(vals.min()) if not vals.empty else 0.0
+                max_v = float(vals.max()) if not vals.empty else 1.0
+                # add a small padding so points don't sit on the chart edge
+                if min_v == max_v:
+                    # expand single-value range
+                    min_v -= 0.5
+                    max_v += 0.5
+                else:
+                    span = max_v - min_v
+                    pad = span * 0.08  # 8% padding top/bottom
+                    min_v -= pad
+                    max_v += pad
+            except Exception:
+                min_v, max_v = 0.0, 1.0
 
-        def chart_for(feature, container):
-            with container:
-                st.markdown(f'**{feature}**')
-                if feature not in df_plot.columns:
-                    st.info(f'No `{feature}` data')
-                    return
-                chart = alt.Chart(df_plot).mark_line().encode(
-                    x=alt.X('timestamp:T', title='Time'),
-                    y=alt.Y(f'{feature}:Q', title=feature)
-                )
-                points = alt.Chart(df_plot).mark_circle(size=40).encode(
-                    x='timestamp:T',
-                    y=alt.Y(f'{feature}:Q'),
-                    color=alt.Color('alert_level:N', scale=alt.Scale(domain=['NORMAL','WARNING','CRITICAL'], range=['#2ecc71','#f1c40f','#e74c3c'])),
-                    tooltip=['timestamp:T', f'{feature}:Q', 'alert_level:N']
-                )
-                st.altair_chart((chart + points).interactive(), use_container_width=True)
+            # compute x-axis domain padding for timestamp so points aren't clipped
+            try:
+                times = pd.to_datetime(df_plot['timestamp']).dropna()
+                min_t = times.min()
+                max_t = times.max()
+                if min_t == max_t:
+                    min_t -= pd.Timedelta(seconds=30)
+                    max_t += pd.Timedelta(seconds=30)
+                else:
+                    span = max_t - min_t
+                    pad = pd.Timedelta(seconds=int(span.total_seconds() * 0.08))
+                    min_t -= pad
+                    max_t += pad
+                x_scale = alt.Scale(domain=[min_t.isoformat(), max_t.isoformat()])
+                x_enc = alt.X('timestamp:T', title='Time', scale=x_scale)
+            except Exception:
+                x_enc = alt.X('timestamp:T', title='Time')
 
-        chart_for('temp', col1)
-        chart_for('pressure', col2)
-        chart_for('vibration', col3)
+            chart = alt.Chart(df_plot).mark_line().encode(
+                x=x_enc,
+                y=alt.Y(f'{feature}:Q', title=feature, scale=alt.Scale(domain=[min_v, max_v]))
+            ).properties(height=220)
+            points = alt.Chart(df_plot).mark_circle(size=40).encode(
+                x=alt.X('timestamp:T', title='Time', scale=x_scale) if 'x_scale' in locals() else alt.X('timestamp:T', title='Time'),
+                y=alt.Y(f'{feature}:Q', scale=alt.Scale(domain=[min_v, max_v])),
+                color=alt.Color('alert_level:N', scale=alt.Scale(domain=['NORMAL','WARNING','CRITICAL'], range=['#2ecc71','#f1c40f','#e74c3c'])),
+                tooltip=['timestamp:T', f'{feature}:Q', 'alert_level:N']
+            ).properties(height=220)
+            # render full-width chart stacked in its own row
+            st.altair_chart((chart + points).interactive(), width='stretch')
+
+        # render each feature chart in its own row (full width)
+        chart_for('temp')
+        chart_for('pressure')
+        chart_for('vibration')
     else:
         st.info('No timestamp available — cannot draw time series')
 
@@ -121,16 +152,16 @@ def render_dashboard(df, X, y):
     if not anomalies.empty:
         if 'timestamp' in anomalies.columns:
             anomalies['timestamp'] = pd.to_datetime(anomalies['timestamp'])
-            anomalies = anomalies.sort_values('timestamp', ascending=True)
+            anomalies = anomalies.sort_values('timestamp', ascending=False).reset_index(drop=True)
         cols = []
         if 'timestamp' in anomalies.columns:
             cols.append('timestamp')
         cols += ['temp', 'pressure', 'vibration', 'abnormal_prob', 'alert_level']
         df_anom_display = anomalies[cols].reset_index(drop=True)
-        st.dataframe(df_anom_display)
-        for _, r in anomalies.iterrows():
-            label = f"{r['alert_level']} ({r['abnormal_prob']:.2f})"
-            with st.expander(f"{r.get('timestamp', '')}: {label}"):
-                st.write(generate_alert(r.get('timestamp', ''), float(r['abnormal_prob']), r))
+        st.dataframe(df_anom_display, hide_index=True)
+        # for _, r in anomalies.iterrows():
+        #     label = f"{r['alert_level']} ({r['abnormal_prob']:.2f})"
+        #     with st.expander(f"{r.get('timestamp', '')}: {label}"):
+        #         st.write(generate_alert(r.get('timestamp', ''), float(r['abnormal_prob']), r))
     else:
         st.info('No anomalies in selected range')
