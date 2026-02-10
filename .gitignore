@@ -87,7 +87,6 @@ LICENSE
 Makefile
 setup.py
 README.md.backup
-image-1.png
 
 # 不需要上傳的腳本 (保留 cli_simulator.py)
 scripts/agent_run.py
