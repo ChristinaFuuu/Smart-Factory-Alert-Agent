@@ -83,6 +83,16 @@ python scripts/cli_simulator.py
 - **告警分級**：NORMAL（正常）/ WARNING（警告）/ CRITICAL（危急）
 - **互動儀表板**：即時監控與告警建議
 
+## Demo 截圖
+
+### Web 儀表板
+![Web Dashboard](web.jpg)
+*即時監控儀表板：顯示告警分布、模型效能指標與時間序列視覺化*
+
+### CLI 模擬器
+![CLI Simulator](image-1.png)
+*命令列模擬器：展示即時異常偵測與機率分級告警*
+
 ## 技術棧
 
 - **Python 3.10+**
