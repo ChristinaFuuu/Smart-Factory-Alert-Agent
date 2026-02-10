@@ -87,8 +87,6 @@ LICENSE
 Makefile
 setup.py
 README.md.backup
-資料產生方式報告講稿.md
-資料產生方式簡報講稿.md
 image-1.png
 
 # 不需要上傳的腳本 (保留 cli_simulator.py)
